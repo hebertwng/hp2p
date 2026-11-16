@@ -36,16 +36,42 @@ def make_icon(path: Path) -> None:
         raise SystemExit("Falha ao salvar o ícone .ico")
 
 
+def write_version_file(path: Path) -> None:
+    """Informações de versão do executável (Propriedades → Detalhes e título das notificações do Windows)."""
+    sys.path.insert(0, str(AGENT))
+    from config import APP_VERSION
+    nums = tuple(int(x) for x in APP_VERSION.split(".")) + (0,)
+    path.write_text(f"""VSVersionInfo(
+  ffi=FixedFileInfo(filevers={nums[:4]}, prodvers={nums[:4]}, mask=0x3f, flags=0x0, OS=0x40004,
+                    fileType=0x1, subtype=0x0, date=(0, 0)),
+  kids=[
+    StringFileInfo([StringTable('041604B0', [
+      StringStruct('CompanyName', 'HP2P'),
+      StringStruct('FileDescription', 'HP2P Acesso Remoto'),
+      StringStruct('FileVersion', '{APP_VERSION}'),
+      StringStruct('InternalName', 'HP2P'),
+      StringStruct('LegalCopyright', 'HP2P'),
+      StringStruct('OriginalFilename', 'HP2P.exe'),
+      StringStruct('ProductName', 'HP2P Acesso Remoto'),
+      StringStruct('ProductVersion', '{APP_VERSION}')])]),
+    VarFileInfo([VarStruct('Translation', [0x0416, 1200])])
+  ]
+)
+""", encoding="utf-8")
+
+
 def main() -> None:
     icon = WORK / "hp2p.ico"
     make_icon(icon)
+    version_file = WORK / "version_info.txt"
+    write_version_file(version_file)
     # remove a distribuição antiga em pasta (versões anteriores)
     for old in (DIST / "HP2P", DIST / "HP2P-agente.zip"):
         if old.is_dir():
             shutil.rmtree(old)
         elif old.exists():
             old.unlink()
-    env = {**os.environ, "HP2P_ICON": str(icon)}
+    env = {**os.environ, "HP2P_ICON": str(icon), "HP2P_VERSION_FILE": str(version_file)}
     cmd = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
            "--distpath", str(DIST), "--workpath", str(WORK), str(ROOT / "build" / "hp2p.spec")]
     print("[..] PyInstaller (onefile)")

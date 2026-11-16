@@ -95,8 +95,12 @@
       if (!key) throw new Error("O computador remoto não comprovou sua identidade. Conexão abortada por segurança.");
 
       // ---------------- autorização do usuário local
-      this.ui.status("Senha aceita. Aguardando o usuário remoto autorizar o acesso...", "wait");
-      const dec = await this._wait(["authorized", "rejected"], 120000);
+      this.ui.status("Senha aceita. Iniciando a sessão...", "ok");
+      let dec = await this._wait(["authorized", "rejected", "auth-wait-local"], 120000);
+      if (dec.t === "auth-wait-local") {   // não enviado no acesso não supervisionado
+        this.ui.status("Senha aceita. Aguardando o usuário remoto autorizar o acesso...", "wait");
+        dec = await this._wait(["authorized", "rejected"], 120000);
+      }
       if (dec.t === "rejected") throw new Error("O usuário remoto rejeitou a conexão.");
       this.permission = dec.permission;
       this.screen = dec.screen;

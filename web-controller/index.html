@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HP2P Acesso Remoto</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=3">
   <script src="config.js"></script>
   <script src="js/vendor/peerjs-1.5.4.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR"></script>
   <script src="js/vendor/hash-wasm-4.12.0.umd.min.js" integrity="sha384-6bLcbLILNvgBcX8TYQUYYOoePP/iXTwteWiGSloiTYvujkovkjXOM/ybjXgi9kmr"></script>
   <script src="js/authentication.js"></script>
   <script src="js/peer.js"></script>
-  <script src="js/connection.js"></script>
+  <script src="js/connection.js?v=2"></script>
   <script src="js/remote-screen.js"></script>
   <script src="js/mouse.js"></script>
   <script src="js/keyboard.js"></script>
@@ -24,9 +24,16 @@
       <div class="brand">
         <a class="logo" href="https://github.com/hebertwng/hp2p" target="_blank" rel="noopener"
            title="HP2P no GitHub — código e download do HP2P.exe" aria-label="HP2P no GitHub">
-          <img src="favicon.svg" alt="" width="40" height="40">
+          <!-- ícone sem fundo: herda a cor de destaque da página (claro/escuro) -->
+          <svg viewBox="6 10 54 44" width="64" height="52" aria-hidden="true" focusable="false">
+            <path d="M24 36 L40 28" stroke="currentColor" stroke-opacity=".55" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 7" fill="none"/>
+            <g fill="currentColor">
+              <rect x="6" y="30" width="20" height="14" rx="2.5"/><rect x="13" y="45" width="6" height="4"/><rect x="10" y="49" width="12" height="3" rx="1.5"/>
+              <rect x="38" y="12" width="20" height="14" rx="2.5"/><rect x="45" y="27" width="6" height="4"/><rect x="42" y="31" width="12" height="3" rx="1.5"/>
+            </g>
+          </svg>
         </a>
-        <h1 id="title">HP2P <span class="subtitle">Acesso remoto</span></h1>
+        <h1 id="title"><span class="sr-only">HP2P </span>Acesso remoto</h1>
       </div>
       <form id="connect-form" autocomplete="off" novalidate>
         <label for="device-id">Identificação do computador</label>

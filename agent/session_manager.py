@@ -298,12 +298,23 @@ class AgentService:
         s.credential = s.handshake.credential_kind or "-"
         s.state = "await-local"
         s.conn.send(ok)
-        s.conn.send({"t": "auth-wait-local"})
-        self.ui.event(f"Senha validada para '{s.operator}'. Aguardando autorização local.")
         # Adianta a preparação da mídia (captura + coleta de ICE) enquanto o usuário decide.
         # Nada é enviado ao navegador antes da autorização: a oferta fica retida e a trilha bloqueada.
         s.prepared = asyncio.ensure_future(self._prepare_media(s))
         s.tasks.append(s.prepared)
+        if s.credential == "unattended":
+            # Acesso NÃO SUPERVISIONADO: a senha específica dispensa o "Aceitar conexão".
+            # A faixa vermelha e a notificação continuam aparecendo para quem estiver no computador.
+            s.permission = self.settings.get("unattended_permission")
+            if s.permission not in PERMISSIONS:
+                s.permission = "full"
+            log.warning("Acesso não supervisionado concedido a '%s' (%s), permissão=%s",
+                        s.operator, s.conn.remote_id, s.permission)
+            self.ui.event(f"Acesso NÃO SUPERVISIONADO por '{s.operator}' (sem aceite local)")
+            s.tasks.append(asyncio.ensure_future(self._start_media(s)))
+            return
+        s.conn.send({"t": "auth-wait-local"})
+        self.ui.event(f"Senha validada para '{s.operator}'. Aguardando autorização local.")
         s.tasks.append(asyncio.ensure_future(self._ask_local(s)))
 
     async def _prepare_media(self, s: Session) -> MediaCall:
@@ -392,7 +403,7 @@ class AgentService:
         route = describe_route(s.conn.pc)
         info = {"operator": s.operator, "peer": s.conn.remote_id, "since": s.started_at,
                 "permission": s.permission, "ip": route.get("remote_ip", "-"),
-                "relay": route.get("relay", False)}
+                "relay": route.get("relay", False), "unattended": s.credential == "unattended"}
         self.ui.session(info)
         self.ui.status("session", f"Sessão remota ativa com '{s.operator}'")
         log.info("Sessão ativa: operador=%s permissão=%s rota=%s", s.operator, s.permission, route)

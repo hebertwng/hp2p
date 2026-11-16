@@ -216,7 +216,8 @@ class SessionBanner(QWidget):
         outer.addWidget(frame)
 
     def show_for(self, info: dict) -> None:
-        self.label.setText(f"● Sessão remota ativa — {_esc(info.get('operator'))} "
+        kind = "Acesso NÃO SUPERVISIONADO" if info.get("unattended") else "Sessão remota ativa"
+        self.label.setText(f"● {kind} — {_esc(info.get('operator'))} "
                            f"({PERM_LABEL.get(info.get('permission'), '')})")
         self.adjustSize()
         geo = QGuiApplication.primaryScreen().availableGeometry()
@@ -282,6 +283,43 @@ class SettingsDialog(QDialog):
         sl.addStretch()
         tabs.addTab(s, "Senha")
 
+        # Acesso não supervisionado ------------------------------------
+        u = QWidget()
+        ul = QVBoxLayout(u)
+        info = QLabel("Permite conectar <b>sem</b> que alguém clique em \"Aceitar conexão\" neste computador, "
+                      "usando uma senha própria. A faixa vermelha de sessão ativa continua aparecendo e "
+                      "pode encerrar o acesso a qualquer momento.<br><br>"
+                      "Funciona enquanto este usuário estiver logado e o HP2P aberto — ative "
+                      "\"Iniciar com o Windows\" na aba Geral.")
+        info.setWordWrap(True)
+        ul.addWidget(info)
+        self.un_status = QLabel()
+        ul.addWidget(self.un_status)
+        ubox = QGroupBox("Senha de acesso não supervisionado")
+        uf = QFormLayout(ubox)
+        self.un1 = QLineEdit(echoMode=QLineEdit.Password)
+        self.un2 = QLineEdit(echoMode=QLineEdit.Password)
+        self.un1.setPlaceholderText("mínimo 12 caracteres, 3 tipos")
+        uf.addRow("Senha:", self.un1)
+        uf.addRow("Confirmar:", self.un2)
+        self.un_perm = QComboBox()
+        for k in ("view", "mouse", "full"):
+            self.un_perm.addItem(PERM_LABEL[k], k)
+        self.un_perm.setCurrentIndex(max(0, self.un_perm.findData(settings.get("unattended_permission"))))
+        uf.addRow("Permissões:", self.un_perm)
+        urow = QHBoxLayout()
+        self.un_set = QPushButton("Ativar / trocar senha")
+        self.un_set.clicked.connect(self._set_unattended)
+        self.un_off = QPushButton("Desativar")
+        self.un_off.clicked.connect(self._clear_unattended)
+        urow.addWidget(self.un_set)
+        urow.addWidget(self.un_off)
+        uf.addRow(urow)
+        ul.addWidget(ubox)
+        ul.addStretch()
+        tabs.addTab(u, "Não supervisionado")
+        self._refresh_unattended()
+
         # Servidor ---------------------------------------------------
         v = QWidget()
         vl = QFormLayout(v)
@@ -323,6 +361,8 @@ class SettingsDialog(QDialog):
         tabs.addTab(vd, "Vídeo")
 
         bb = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        bb.button(QDialogButtonBox.Save).setText("Salvar")
+        bb.button(QDialogButtonBox.Cancel).setText("Cancelar")
         bb.accepted.connect(self._save)
         bb.rejected.connect(self.reject)
         lay = QVBoxLayout(self)
@@ -355,6 +395,40 @@ class SettingsDialog(QDialog):
         QMessageBox.information(self, APP_NAME, f"Senha temporária ativa por {self.temp_min.value()} min "
                                                 "(copiada para a área de transferência).")
 
+    def _refresh_unattended(self) -> None:
+        on = self.pm.unattended_enabled
+        self.un_status.setText("<b style='color:#c62828'>● ATIVO</b> — conexões com a senha não supervisionada "
+                               "entram sem aceite." if on else "<b>○ Desativado</b>")
+        self.un_off.setEnabled(on)
+
+    def _set_unattended(self) -> None:
+        a, b = self.un1.text(), self.un2.text()
+        if a != b:
+            QMessageBox.warning(self, APP_NAME, "As senhas não conferem.")
+            return
+        try:
+            self.pm.set_unattended(a)
+        except ValueError as exc:
+            QMessageBox.warning(self, APP_NAME, str(exc))
+            return
+        self.settings.set(self.un_perm.currentData(), "unattended_permission")
+        self.un1.clear()
+        self.un2.clear()
+        self._refresh_unattended()
+        msg = "Acesso não supervisionado ativado. A senha anterior (se havia) foi invalidada."
+        if not self.startup.isChecked():
+            if ask_yes_no(self, APP_NAME, msg + "\n\nPara funcionar após reiniciar o computador, o HP2P "
+                                    "precisa iniciar com o Windows. Ativar agora?"):
+                self.startup.setChecked(True)
+                self.minimized.setChecked(True)
+        else:
+            QMessageBox.information(self, APP_NAME, msg)
+
+    def _clear_unattended(self) -> None:
+        if ask_yes_no(self, APP_NAME, "Desativar o acesso não supervisionado? A senha será apagada.") :
+            self.pm.clear_unattended()
+            self._refresh_unattended()
+
     def _clear_temp(self) -> None:
         self.pm.clear_temporary()
 
@@ -377,6 +451,7 @@ class SettingsDialog(QDialog):
         st.data["start_with_windows"] = self.startup.isChecked()
         st.data["video"]["monitor"] = self.monitor.value()
         st.data["video"]["quality"] = self.quality.currentData()
+        st.data["unattended_permission"] = self.un_perm.currentData()
         want_auto = self.auto_pw.isChecked()
         st.data["auto_password"] = want_auto
         st.save()
@@ -432,6 +507,7 @@ class MainWindow(QMainWindow):
         self.new_pw.clicked.connect(self._new_password)
         self.pw_note = QLabel()
         self.pw_note.setStyleSheet("color: #6b7280;")
+        self.pw_note.setWordWrap(True)
         pl.addWidget(self.pw_edit, 0, 0, 1, 2)
         pl.addWidget(self.view_btn, 0, 2)
         pl.addWidget(self.copy_pw, 0, 3)
@@ -535,6 +611,8 @@ class MainWindow(QMainWindow):
         exp = self.pm.temporary_expires_at()
         if exp:
             note += f"  Temporária válida até {datetime.fromtimestamp(exp):%H:%M}."
+        if self.pm.unattended_enabled:
+            note += "  <b style='color:#c62828'>Acesso não supervisionado ATIVO.</b>"
         self.pw_note.setText(note)
 
     def _toggle_pw(self, on: bool) -> None:
@@ -543,7 +621,7 @@ class MainWindow(QMainWindow):
 
     def _new_password(self) -> None:
         if self.pm.mode == "custom":
-            if QMessageBox.question(self, APP_NAME, "Trocar a senha personalizada por uma senha automática?") != QMessageBox.Yes:
+            if ask_yes_no(self, APP_NAME, "Trocar a senha personalizada por uma senha automática?") is False:
                 return
             self.pm.use_auto()
             self.settings.set(True, "auto_password")
@@ -552,8 +630,8 @@ class MainWindow(QMainWindow):
         self._on_event("Nova senha gerada. A senha anterior foi invalidada.")
 
     def _new_id(self) -> None:
-        if QMessageBox.question(self, APP_NAME, "Gerar uma nova identificação? Quem usa o ID atual não "
-                                "conseguirá mais localizar este computador.") != QMessageBox.Yes:
+        if ask_yes_no(self, APP_NAME, "Gerar uma nova identificação? Quem usa o ID atual não "
+                                "conseguirá mais localizar este computador.") is False:
             return
         self.pm.regenerate_device_id()
         self._refresh_id()
@@ -594,8 +672,9 @@ class MainWindow(QMainWindow):
         if info:
             self.banner.show_for(info)
             self.tray.setIcon(make_icon("#c62828"))
-            self.tray.showMessage(APP_NAME, f"Sessão remota iniciada por {info.get('operator')}",
-                                  QSystemTrayIcon.Warning, 4000)
+            kind = "Acesso NÃO SUPERVISIONADO" if info.get("unattended") else "Sessão remota iniciada"
+            self.tray.showMessage(APP_NAME, f"{kind} por {info.get('operator')}",
+                                  QSystemTrayIcon.Warning, 6000)
         else:
             self.banner.hide()
             self.tray.setIcon(make_icon())
@@ -645,8 +724,8 @@ class MainWindow(QMainWindow):
         self.tray.showMessage(APP_NAME, "O HP2P continua em execução na bandeja.", QSystemTrayIcon.Information, 2500)
 
     def quit(self) -> None:
-        if self.session_info and QMessageBox.question(
-                self, APP_NAME, "Há uma sessão remota ativa. Encerrar e sair?") != QMessageBox.Yes:
+        if self.session_info and ask_yes_no(
+                self, APP_NAME, "Há uma sessão remota ativa. Encerrar e sair?") is False:
             return
         self._quitting = True
         self.banner.hide()
@@ -654,6 +733,16 @@ class MainWindow(QMainWindow):
         self.thread.join(timeout=5)
         self.tray.hide()
         QApplication.quit()
+
+
+def ask_yes_no(parent, title: str, text: str) -> bool:
+    """Pergunta Sim/Não em português (o executável não inclui as traduções do Qt)."""
+    box = QMessageBox(QMessageBox.Question, title, text, parent=parent)
+    yes = box.addButton("Sim", QMessageBox.YesRole)
+    no = box.addButton("Não", QMessageBox.NoRole)
+    box.setDefaultButton(no)
+    box.exec()
+    return box.clickedButton() is yes
 
 
 def _esc(v) -> str:

@@ -22,7 +22,7 @@ from typing import Any
 log = logging.getLogger("hp2p.config")
 
 APP_NAME = "HP2P"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 PROTOCOL_VERSION = 1
 FROZEN = getattr(sys, "frozen", False)
 CLOUD_HOST = "0.peerjs.com"
@@ -61,6 +61,8 @@ DEFAULTS: dict[str, Any] = {
     "start_with_windows": False,
     "start_minimized": False,
     "authorization_timeout_s": 60,
+    # Permissão concedida no acesso não supervisionado (view | mouse | full)
+    "unattended_permission": "full",
     "video": {
         "monitor": 1,               # 1 = monitor principal (índice do mss)
         "quality": "auto",          # auto | low | medium | high

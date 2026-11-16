@@ -46,6 +46,7 @@ SRP_USERNAME = "hp2p"
 KDF_PARAMS = {"alg": "argon2id", "m": 65536, "t": 2, "p": 1, "len": 32}
 _ALPHABET = "".join(c for c in string.ascii_letters + string.digits if c not in "0O1lI")
 MIN_CUSTOM_LENGTH = 10
+MIN_UNATTENDED_LENGTH = 12
 
 
 def b64(b: bytes) -> str:
@@ -93,7 +94,7 @@ def make_verifier(password: str) -> dict:
 
 @dataclass
 class Credential:
-    kind: str                 # "auto" | "custom" | "temp"
+    kind: str                 # "auto" | "custom" | "temp" | "unattended"
     verifier: dict
     expires_at: float | None = None  # epoch (time.time) para temporárias
 
@@ -207,6 +208,33 @@ class PasswordManager:
                 log.info("Senha temporária removida")
                 self._changed()
 
+    # ------------------------------------------------- acesso não supervisionado
+    # Senha separada que dispensa a janela "Aceitar conexão". Persistida só como verificador (DPAPI).
+    # Exige senha mais forte que a personalizada, pois não há um humano confirmando o acesso.
+    @property
+    def unattended_enabled(self) -> bool:
+        return bool(self._data.get("unattended"))
+
+    def set_unattended(self, password: str) -> None:
+        if len(password) < MIN_UNATTENDED_LENGTH:
+            raise ValueError(f"A senha de acesso não supervisionado deve ter pelo menos "
+                             f"{MIN_UNATTENDED_LENGTH} caracteres.")
+        err = validate_custom(password)
+        if err:
+            raise ValueError(err)
+        with self._lock:
+            self._data["unattended"] = make_verifier(password)
+            self._save()
+        log.info("Acesso não supervisionado ATIVADO (senha anterior, se havia, invalidada)")
+        self._changed()
+
+    def clear_unattended(self) -> None:
+        with self._lock:
+            if self._data.pop("unattended", None) is not None:
+                self._save()
+                log.info("Acesso não supervisionado DESATIVADO")
+                self._changed()
+
     def temporary_expires_at(self) -> float | None:
         t = self._data.get("temp")
         if t and time.time() < t["expires_at"]:
@@ -228,4 +256,6 @@ class PasswordManager:
                     self._save()
                 else:
                     out.append(c)
+            if self._data.get("unattended"):
+                out.append(Credential("unattended", self._data["unattended"]))
             return out

@@ -49,6 +49,7 @@ exe = EXE(
     pyz, a.scripts, a.binaries, a.datas, [],
     name="HP2P",
     icon=ICON,
+    version=os.environ.get("HP2P_VERSION_FILE") or None,  # descrição/versão (título das notificações)
     console=False,
     debug=False,
     strip=False,
