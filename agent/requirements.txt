@@ -1,0 +1,8 @@
+aiortc>=1.16
+aiohttp>=3.9
+PySide6>=6.7
+mss>=9.0
+numpy>=1.26
+argon2-cffi>=23.1
+srp>=1.0.22
+dxcam>=0.3

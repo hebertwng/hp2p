@@ -1,0 +1,4 @@
+# Bibliotecas com hash de integridade (SRI) no index.html: nunca converter fim de linha
+web-controller/js/vendor/* -text
+*.png binary
+*.ico binary

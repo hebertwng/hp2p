@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HP2P Acesso Remoto</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="config.js"></script>
+  <script src="js/vendor/peerjs-1.5.4.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR"></script>
+  <script src="js/vendor/hash-wasm-4.12.0.umd.min.js" integrity="sha384-6bLcbLILNvgBcX8TYQUYYOoePP/iXTwteWiGSloiTYvujkovkjXOM/ybjXgi9kmr"></script>
+  <script src="js/authentication.js"></script>
+  <script src="js/peer.js"></script>
+  <script src="js/connection.js"></script>
+  <script src="js/remote-screen.js"></script>
+  <script src="js/mouse.js"></script>
+  <script src="js/keyboard.js"></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <!-- ======================= Tela de conexão ======================= -->
+  <main id="connect-view" class="connect-view">
+    <section class="card" aria-labelledby="title">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">HP2P</span>
+        <h1 id="title">Acesso remoto</h1>
+      </div>
+      <form id="connect-form" autocomplete="off" novalidate>
+        <label for="device-id">Identificação do computador</label>
+        <input id="device-id" inputmode="numeric" placeholder="000-000-000" maxlength="11" required>
+
+        <label for="password">Senha de acesso</label>
+        <div class="pw">
+          <input id="password" type="password" required autocomplete="off">
+          <button type="button" id="toggle-pw" class="ghost" aria-label="Mostrar senha">Mostrar</button>
+        </div>
+
+        <label for="operator">Seu nome (exibido ao usuário remoto)</label>
+        <input id="operator" maxlength="40" placeholder="Operador 01">
+
+        <button id="connect-btn" type="submit" class="primary">Conectar</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <p class="hint">A senha nunca é enviada: o navegador prova que a conhece (SRP-6a) por um canal WebRTC
+        criptografado de ponta a ponta. O usuário remoto precisa autorizar o acesso.</p>
+    </section>
+  </main>
+
+  <!-- ======================= Tela de controle ======================= -->
+  <div id="session-view" class="session-view" hidden>
+    <header class="toolbar">
+      <div class="tb-left">
+        <span id="conn-dot" class="dot ok" aria-hidden="true"></span>
+        <strong id="tb-target">—</strong>
+        <span id="tb-perm" class="pill">—</span>
+        <span id="tb-info" class="muted">—</span>
+      </div>
+      <div class="tb-right">
+        <label class="muted" for="quality">Qualidade</label>
+        <select id="quality">
+          <option value="auto">Automática</option>
+          <option value="low">Baixa</option>
+          <option value="medium">Média</option>
+          <option value="high">Alta</option>
+        </select>
+        <select id="shortcuts" aria-label="Atalhos de teclado">
+          <option value="">Atalhos…</option>
+          <option value="win">Tecla Windows</option>
+          <option value="alt-tab">Alt + Tab</option>
+          <option value="ctrl-shift-esc">Ctrl + Shift + Esc</option>
+          <option value="win-d">Win + D (área de trabalho)</option>
+          <option value="win-e">Win + E (explorador)</option>
+          <option value="win-r">Win + R (executar)</option>
+          <option value="win-l">Win + L (bloquear)</option>
+          <option value="alt-f4">Alt + F4</option>
+          <option value="printscreen">Print Screen</option>
+        </select>
+        <button id="fullscreen-btn" type="button">Tela cheia</button>
+        <button id="disconnect-btn" type="button" class="danger">Desconectar</button>
+      </div>
+    </header>
+    <div id="surface" class="surface" tabindex="0" aria-label="Tela do computador remoto">
+      <video id="remote-video" autoplay playsinline muted></video>
+      <div id="overlay" class="overlay">
+        <p id="overlay-text">Aguardando a imagem do computador remoto…</p>
+        <button id="overlay-back" type="button" hidden>Voltar</button>
+      </div>
+    </div>
+    <div id="toast" class="toast" role="alert" hidden></div>
+  </div>
+</body>
+</html>
