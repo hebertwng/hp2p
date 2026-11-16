@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HP2P Acesso Remoto</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/style.css">
   <script src="config.js"></script>
   <script src="js/vendor/peerjs-1.5.4.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR"></script>
@@ -21,8 +22,11 @@
   <main id="connect-view" class="connect-view">
     <section class="card" aria-labelledby="title">
       <div class="brand">
-        <span class="logo" aria-hidden="true">HP2P</span>
-        <h1 id="title">Acesso remoto</h1>
+        <a class="logo" href="https://github.com/hebertwng/hp2p" target="_blank" rel="noopener"
+           title="HP2P no GitHub — código e download do HP2P.exe" aria-label="HP2P no GitHub">
+          <img src="favicon.svg" alt="" width="40" height="40">
+        </a>
+        <h1 id="title">HP2P <span class="subtitle">Acesso remoto</span></h1>
       </div>
       <form id="connect-form" autocomplete="off" novalidate>
         <label for="device-id">Identificação do computador</label>

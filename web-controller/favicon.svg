@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>HP2P</title>
+  <rect width="64" height="64" rx="14" fill="#1f5bd8"/>
+  <!-- conexão ponto a ponto entre os dois computadores -->
+  <path d="M24 36 L40 28" stroke="#9ec0ff" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 7"/>
+  <!-- computador 1 -->
+  <rect x="6" y="30" width="20" height="14" rx="2.5" fill="#fff"/>
+  <rect x="13" y="45" width="6" height="4" fill="#fff"/>
+  <rect x="10" y="49" width="12" height="3" rx="1.5" fill="#fff"/>
+  <!-- computador 2 -->
+  <rect x="38" y="12" width="20" height="14" rx="2.5" fill="#fff"/>
+  <rect x="45" y="27" width="6" height="4" fill="#fff"/>
+  <rect x="42" y="31" width="12" height="3" rx="1.5" fill="#fff"/>
+</svg>
