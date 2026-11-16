@@ -1,17 +1,8 @@
-# ambientes e dependências
+# ambiente Python
 agent/.venv/
-**/node_modules/
 __pycache__/
 *.pyc
 
-# artefatos de build (o instalador é publicado em Releases)
+# artefatos de build (o HP2P.exe é publicado em Releases)
 dist/
 build/pyinstaller/
-
-# dados e logs locais de teste (contêm IDs, IPs e credenciais de teste)
-tests/run/
-tests/out-*.log
-
-# configuração e certificados do servidor próprio
-server/peer-server/config.json
-server/peer-server/certs/

@@ -14,11 +14,11 @@ import sys
 from config import APP_NAME, FROZEN, Settings, base_dir
 
 
-def setup_logging(debug: bool) -> None:
+def setup_logging(debug: bool, filename: str = "agent.log") -> None:
     logdir = base_dir() / "logs"
     logdir.mkdir(exist_ok=True)
     handlers: list[logging.Handler] = [logging.handlers.RotatingFileHandler(
-        logdir / "agent.log", maxBytes=2_000_000, backupCount=3, encoding="utf-8")]
+        logdir / filename, maxBytes=2_000_000, backupCount=3, encoding="utf-8")]
     if not FROZEN and sys.stdout:
         handlers.append(logging.StreamHandler(sys.stdout))
     logging.basicConfig(level=logging.DEBUG if debug else logging.INFO, handlers=handlers,
@@ -31,7 +31,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(prog=APP_NAME)
     ap.add_argument("--minimized", action="store_true")
     ap.add_argument("--debug", action="store_true")
+    ap.add_argument("--selftest", action="store_true", help="diagnóstico; resultado em logs\\selftest.log")
     args = ap.parse_args()
+    if args.selftest:
+        setup_logging(args.debug, "selftest.log")
+        import selftest
+        return selftest.run()
     setup_logging(args.debug)
     log = logging.getLogger("hp2p")
 

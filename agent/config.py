@@ -22,7 +22,7 @@ from typing import Any
 log = logging.getLogger("hp2p.config")
 
 APP_NAME = "HP2P"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 PROTOCOL_VERSION = 1
 FROZEN = getattr(sys, "frozen", False)
 CLOUD_HOST = "0.peerjs.com"
@@ -40,7 +40,7 @@ def base_dir() -> Path:
 
 DEFAULTS: dict[str, Any] = {
     # Sinalização: PeerJS Cloud público (mesmos valores padrão da biblioteca PeerJS).
-    # Para um PeerServer próprio (server/peer-server): host/porta do servidor, path "/signal", key "hp2p".
+    # Pode ser trocada por um PeerServer próprio em Configurações → Servidor.
     "signaling": {
         "host": CLOUD_HOST,
         "port": 443,
@@ -75,6 +75,9 @@ DEFAULTS: dict[str, Any] = {
 }
 
 
+CONFIG_VERSION = 2  # 2 = sinalização padrão pelo PeerJS Cloud (versões anteriores usavam servidor local)
+
+
 def _merge(base: dict, extra: dict) -> dict:
     out = copy.deepcopy(base)
     for k, v in (extra or {}).items():
@@ -102,20 +105,27 @@ class Settings:
                 data = json.loads(p.read_text(encoding="utf-8-sig"))
             except (OSError, json.JSONDecodeError) as exc:
                 log.error("settings.json inválido (%s); usando padrões", exc)
-        # Ao lado do .exe pode existir um settings.json de fábrica (distribuição pré-configurada).
-        # O instalador grava um "factory_id" novo a cada instalação: nesse caso o servidor escolhido no
-        # instalador substitui o da configuração antiga do usuário (reinstalação com outro servidor).
-        factory = Path(sys.executable if FROZEN else __file__).with_name("settings.json")
         changed = not p.exists()
-        if factory.exists():
+        # Migração: configurações de versões anteriores apontavam para um servidor local de testes.
+        if data and data.get("config_version", 1) < CONFIG_VERSION:
+            data.pop("signaling", None)
+            data.pop("ice_servers", None)
+            data.pop("ice_endpoint", None)
+            log.info("Configuração antiga migrada para a sinalização padrão (PeerJS Cloud)")
+            changed = True
+        data["config_version"] = CONFIG_VERSION
+        # Opcional: um settings.json ao lado do HP2P.exe pré-configura uma distribuição (ex.: servidor
+        # próprio). Aplicado quando o usuário ainda não tem configuração ou quando o "factory_id" muda.
+        factory = Path(sys.executable if FROZEN else __file__).with_name("settings.json")
+        if factory.exists() and factory != p:
             try:
                 fdata = json.loads(factory.read_text(encoding="utf-8-sig"))
                 fid = fdata.get("factory_id")
                 if not p.exists() or (fid and fid != data.get("factory_id")):
                     data = _merge(data, fdata)
                     changed = True
-                    log.info("Configuração de fábrica aplicada: %s", factory)
-            except (OSError, json.JSONDecodeError):
+                    log.info("Configuração de distribuição aplicada: %s", factory)
+            except (OSError, json.JSONDecodeError, AttributeError):
                 pass
         s = cls(_merge(DEFAULTS, data))
         if changed:

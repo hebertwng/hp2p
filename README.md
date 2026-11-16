@@ -1,17 +1,17 @@
 # HP2P — Acesso Remoto
 
 Acesso e controle remoto de computadores Windows, com conexão direta (P2P) e criptografada entre os
-computadores.
+computadores. Nada para instalar: um executável de um lado e uma página web do outro.
 
 ## Como usar
 
-**1. No computador que será acessado:** baixe e instale o HP2P.
+**1. No computador que será acessado:** baixe e execute o **HP2P.exe**. Não precisa instalar.
 
-➡️ **[Baixar o instalador (Windows 10/11)](https://github.com/hebertwng/hp2p/releases/latest/download/HP2P-Instalador-1.0.0.exe)**
+➡️ **[Baixar HP2P.exe (Windows 10/11)](https://github.com/hebertwng/hp2p/releases/latest/download/HP2P.exe)**
 
-Na instalação, escolha **"Este computador será ACESSADO"**. O HP2P abre mostrando o **ID** e a **senha**.
+O HP2P abre mostrando o **ID** e a **senha** deste computador.
 
-**2. No computador que vai acessar:** não precisa instalar nada. Abra a página de acesso:
+**2. No computador que vai acessar:** abra a página de acesso no navegador:
 
 ➡️ **[Página de acesso — https://hebertwng.github.io/hp2p/](https://hebertwng.github.io/hp2p/)**
 
@@ -21,6 +21,9 @@ Informe o **ID** e a **senha** e clique em **Conectar**.
 visualizar, controlar o mouse ou controlar mouse e teclado.
 
 Uma faixa vermelha fica visível durante toda a sessão, com o botão **Encerrar**.
+
+> O executável não é assinado digitalmente. Se o Windows SmartScreen avisar, clique em **"Mais informações"**
+> e depois em **"Executar assim mesmo"**.
 
 ## Como funciona
 
@@ -35,5 +38,4 @@ Uma faixa vermelha fica visível durante toda a sessão, com o botão **Encerrar
 * **Rede:** funciona na mesma rede e entre redes diferentes. Quando a conexão direta não é possível, ela é
   retransmitida por TURN, ainda criptografada.
 
-Documentação técnica: [arquitetura](docs/architecture.md) · [segurança](docs/security.md) ·
-[instalação e build](docs/installation.md)
+Documentação técnica: [arquitetura](docs/architecture.md)
